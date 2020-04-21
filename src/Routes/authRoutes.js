@@ -2,156 +2,70 @@ const express = require('express')
 const authRouter = express.Router()
 const passport = require('passport')
 const passportConfig = require('../passport')
-const JWT = require('jsonwebtoken')
-const User = require('../Models/User')
+const AuthController = require('../Controllers/authControllers')
 
-const signToken = userID =>
-  JWT.sign({ iss: 'RickBrown', sub: userID }, process.env.JWT_SECRET, {
-    expiresIn: '1h',
-  })
+const authenticate = strategy => passport.authenticate(strategy, { session: false })
 
-authRouter.get('/test', (req, res) => {
-  res.status(200).json({ data: '/auth/test' })
-})
+/**
+ *  @summary TEST ROUTE
+ *  @route   GET /auth/test
+ *  @access  Public
+ */
+authRouter.get('/test', AuthController.test)
 
-authRouter.post('/register', (req, res) => {
-  const { username, password, role } = req.body
-  User.findOne({ username }, (err, user) => {
-    if (err) {
-      res.status(500).json({
-        message: { msgBody: 'An error has occurred.', msgError: true },
-      })
-    }
-    if (user) {
-      res.status(400).json({
-        message: {
-          msgBody: 'Username has already been taken.',
-          msgError: true,
-        },
-      })
-    } else {
-      const newUser = new User({ username, password, role })
-      newUser.save(err => {
-        if (err) {
-          res.status(500).json({
-            message: {
-              msgBody: 'An error has occurred whilst saving the user.',
-              msgError: true,
-            },
-          })
-        } else {
-          res.status(201).json({
-            message: {
-              msgBody: 'Account created successfully.',
-              msgError: false,
-            },
-          })
-        }
-      })
-    }
-  })
-})
+/**
+ *  @summary REGISTER
+ *  @route   GET /auth/register
+ *  @access  Public
+ *  @header  { Content-Type: application/json }
+ *  @body    { username: String, password: String, role: String }
+ */
+authRouter.post('/register', AuthController.register)
 
-authRouter.post(
-  '/login',
-  passport.authenticate('local', { session: false }),
-  (req, res) => {
-    if (req.isAuthenticated()) {
-      const { _id, username, role } = req.user
-      const token = signToken(_id)
-      res.cookie('access_token', token, { httpOnly: true, sameSite: true })
-      res.status(200).json({ isAuthenticated: true, user: { username, role } })
-    }
-  }
-)
+/**
+ *  @summary LOGIN
+ *  @route   GET /auth/login
+ *  @access  Private
+ *  @header  { Content-Type: application/json }
+ *  @body    { username: String, password: String }
+ */
+authRouter.post('/login', authenticate('local'), AuthController.login)
 
-authRouter.get(
-  '/logout',
-  passport.authenticate('jwt', { session: false }),
-  (req, res) => {
-    res.clearCookie('access_token')
-    res.status(200).json({ user: { username: '', role: '' }, success: true })
-  }
-)
+/**
+ *  @summary LOGOUT
+ *  @route   GET /auth/register
+ *  @access  Private
+ */
+authRouter.get('/logout', authenticate('jwt'), AuthController.logout)
 
-authRouter.post(
-  '/todo',
-  passport.authenticate('jwt', { session: false }),
-  (req, res) => {
-    const todo = new Todo(req.body)
-    todo.save(err => {
-      if (err) {
-        res.status(500).json({
-          message: {
-            msgBody: 'An error has occurred with the todos.',
-            msgError: true,
-          },
-        })
-      }
-      req.user.todos.push(todo)
-      req.user.save(err => {
-        // TODO: create error middleware for DRY approach
-        if (err) {
-          res.status(500).json({
-            message: {
-              msgBody: 'An error has occurred when saving the new todo.',
-              msgError: true,
-            },
-          })
-        }
-        res.status(200).json({
-          message: { msgBody: 'Successfully created todo', msgError: false },
-        })
-      })
-    })
-  }
-)
+/**
+ *  @summary AUTHENTICATED
+ *  @route   GET /auth/authenticated
+ *  @access  Public
+ */
+authRouter.get('/authenticated', authenticate('jwt'), AuthController.authenticated)
 
-// TODO: create auth middleware for DRY approach
-authRouter.get(
-  '/todos',
-  passport.authenticate('jwt', { session: false }),
-  (req, res) => {
-    User.findById({ _id: req.user._id })
-      .populate('todos')
-      .exec((err, doc) => {
-        if (err) {
-          res.status(500).json({
-            message: {
-              msgBody:
-                'An error has occurred whilst populating the `user` todo array.',
-              msgError: true,
-            },
-          })
-        }
-        res.status(200).json({ todos: doc.todos, authenticated: true })
-      })
-  }
-)
+/**
+ *  @summary ADMIN
+ *  @route   GET /auth/admin
+ *  @access  Private
+ */
+authRouter.get('/admin', authenticate('jwt'), AuthController.admin)
 
-authRouter.get(
-  '/admin',
-  passport.authenticate('jwt', { session: false }),
-  (req, res) => {
-    if (req.user.role === 'admin') {
-      res
-        .status(200)
-        .json({ message: { msgBody: 'You are an admin', msgError: false } })
-    } else {
-      res.status(403).json({
-        message: { msgBody: 'You are not an admin, go away.', msgError: true },
-      })
-    }
-  }
-)
+/**
+ *  @summary CREATE A DATA
+ *  @route   GET /auth/create_a_data
+ *  @access  Public
+ *  @header  { Content-Type: application/json }
+ *  @body    { data: String }
+ */
+authRouter.post('/create_a_data', authenticate('jwt'), AuthController.creates_a_data)
 
-authRouter.get(
-  '/authenticated',
-  passport.authenticate('jwt', { session: false }),
-  (req, res) => {
-    const { username, role } = req.user
-    res.status(200).json({ isAuthenticated: true, user: { username, role } })
-  }
-)
+/**
+ *  @summary GET ALL THE DATAS
+ *  @route   GET /auth/get_all_datas
+ *  @access  Private
+ */
+authRouter.get('/get_all_datas', authenticate('jwt'), AuthController.get_all_datas)
 
 module.exports = authRouter

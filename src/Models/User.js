@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const Data = require('../Models/Data')
 const bcrypt = require('bcrypt')
 
 const UserSchema = new mongoose.Schema({
@@ -23,7 +22,7 @@ const UserSchema = new mongoose.Schema({
   datas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Data' }]
 })
 
-// Before saving User.save() fires, we will check to see if the password is hashed
+// Before User.save() fires, we will check to see if the password is hashed
 // If so, we just skip
 // If not we hash the password and set the updated User object to the req object
 UserSchema.pre('save', function (next) {
