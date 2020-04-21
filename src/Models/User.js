@@ -27,36 +27,34 @@ const UserSchema = new mongoose.Schema({
 // If so, we just skip
 // If not we hash the password and set the updated User object to the req object
 UserSchema.pre('save', function (next) {
-  // skips if password is hashed
-  if (this.isModified('password')) {
-    next()
+  // prevents hashing an already hashed password
+  if (!this.isModified('password')) {
+    return next()
   }
-  // hash the password
-  bcrypt.hash(this.password, 10, (err, encrypted) => {
-    // skip if err
-    if (err) {
-      next(err)
+  // args: (password, salt, callback)
+  bcrypt.hash(this.password, 10, (error, hashedPassword) => {
+    if (error) {
+      return next(error)
     }
-    // set the `this` password to the encrypted password returned from the `hash` function
-    this.password = encrypted
+    this.password = hashedPassword
     next()
   })
 })
 
 // compare the hash sent by the client with the one stored on the database
-UserSchema.methods.comparePassword = function (password, cb) {
-  bcrypt.compare((password, this.password, (err, isMatch) => {
-    // If error skip
-    if (err) {
-      return cb(err)
+UserSchema.methods.comparePassword = async function (password, callback) {
+  // args: (password entered via the UI,
+  //       hashed password attached to the userSchema in the database,
+  //       callback)
+  bcrypt.compare(password, this.password, (error, isMatch) => {
+    if (error) {
+      return callback(error)
     }
-    // isMatch is false, return no error only `false`
     if (!isMatch) {
-      return cb(null, isMatch)
+      return callback(null, isMatch)
     }
-    // this will attach the `user` to the `req` object
-    return cb(this)
-  }))
+    return callback(null, this)
+  })
 }
 
 module.exports = mongoose.model('User', UserSchema)
