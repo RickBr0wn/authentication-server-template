@@ -6,7 +6,7 @@ This is a boilerplate template for speeding up the development process in making
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-### Prerequisites
+## Prerequisites
 
 To get this boilerplate running locally you will need:
 
@@ -17,7 +17,7 @@ To get this boilerplate running locally you will need:
 
 If you want to use a cloud based solution such as [mLabs](https://mlab.com) that is fine, you just need to replace the `connection string` with the one provided.
 
-### Installation
+## Installation
 
 Clone the repo:
 
@@ -37,6 +37,31 @@ git init
 This will remove the existing git history, and allow you to link it to a new repository.
 
 > Please credit this boilerplate if you build something fantastic!
+
+## .env
+
+Lets create a `.env` file in the root of the project:
+
+```bash
+touch .env
+```
+
+Then put the following code in that `.env` except you should add your details.
+
+```bash
+MONGODB_URL=<your_mongodb_connection_string>
+JWT_SECRET=<your_secret_key>
+```
+
+Provided in the root of the project, a `.sample.env` for guidance.
+
+## Scripts
+
+```json
+"scripts": {
+    "dev": "nodemon src/server.js"
+  },
+```
 
 ## Routes
 
